@@ -1,17 +1,15 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import altair as alt
 
-# Disable the warning
-st.set_option('deprecation.showPyplotGlobalUse', False)
-
-# Load data
+# Update the file path
 file_path = r'C:\Users\Zaki\Desktop\streamlitint\company\indian-cities-dataset.csv'
-data = pd.read_csv(file_path)
 
 # Sidebar for filtering
 st.sidebar.header("Filter Data")
+
+# Load data
+data = pd.read_csv(file_path)
 
 # Calculate average distance
 avg_dis = data['Distance'].mean()
@@ -39,23 +37,24 @@ st.sidebar.write(f"City Pair with Minimum Distance: {min_distance_row['Origin'].
 st.write("Top 30 Rows of the Dataset:")
 st.write(data.head(30))
 
-# Create a bar chart for distances
+# Create a bar chart for distances using Streamlit
 st.subheader("Distances Between Cities (Top 10)")
 top_cities = data.groupby(['Origin', 'Destination']).mean().sort_values(by='Distance', ascending=False).head(10)
 
-# Plotting bar chart using matplotlib
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.bar(top_cities.index.map(lambda x: f"{x[0]} to {x[1]}"), top_cities['Distance'])
-ax.set_xticklabels(top_cities.index.map(lambda x: f"{x[0]} to {x[1]}"), rotation=45, ha='right')
-ax.set_xlabel('City Pair')
-ax.set_ylabel('Distance')
-ax.set_title('Distances Between Cities (Top 10)')
-st.pyplot(fig)
+# Reset index before using st.bar_chart
+top_cities_reset_index = top_cities.reset_index()
+st.bar_chart(top_cities_reset_index['Distance'])
 
-# Create a pie chart for distance distribution
+# Create a pie chart for distance distribution using Altair
 st.subheader("Distance Distribution")
 distance_distribution = data.groupby('Destination')['Distance'].sum().sort_values(ascending=False).head(5)
-plt.figure(figsize=(8, 8))
-plt.pie(distance_distribution, labels=distance_distribution.index, autopct='%1.1f%%', startangle=90)
-plt.axis('equal')
-st.pyplot()
+
+# Create Altair chart
+chart = alt.Chart(distance_distribution.reset_index()).mark_bar().encode(
+    x='Destination',
+    y='Distance',
+    color='Destination'
+).properties(width=500, height=300)
+
+# Display the Altair chart in Streamlit
+st.altair_chart(chart, use_container_width=True)
